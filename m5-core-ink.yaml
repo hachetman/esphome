@@ -1,0 +1,125 @@
+esphome:
+  name: m5-core-ink
+  friendly_name: m5_core_ink
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "IxZwPI6S0ilD5kRiHt6ZCEPlZ+gAmXLvbZX7uv8c6Gs="
+
+ota:
+  - platform: esphome
+    password: "241d5aef569dfa2dde1ef6a2ad431741"
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: Europe/Berlin
+    servers:
+     - 0.pool.ntp.org
+     - 1.pool.ntp.org
+     - 2.pool.ntp.org
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "M5-Core-Ink Fallback Hotspot"
+    password: "PKLbFBwZ2JHZ"
+
+captive_portal:
+
+font:
+  - file: 'RobotoCondensed-Regular.ttf'
+    id: font1
+    size: 30
+
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+
+display:
+  - platform: waveshare_epaper
+    cs_pin: GPIO09
+    dc_pin: GPIO15
+    busy_pin: GPIO04
+    reset_pin: GPIO00
+    model: 1.54in-m5coreink-m09
+    update_interval: 60s
+    lambda: |-
+      it.strftime(65, 0, id(font1), "%H:%M", id(sntp_time).now());
+      it.strftime(0, 50, id(font1), "%Y-%m-%d %a", id(sntp_time).now());
+switch:
+  - platform: gpio
+    pin: GPIO10
+    id: LED 
+    inverted: true
+    name: LED
+  - platform: gpio
+    pin: GPIO12
+    id: POWER
+    name: POWER
+    inverted: true
+    on_turn_on: 
+      then:
+        - deep_sleep.enter
+        
+
+sensor:
+  - platform: adc
+    pin: GPIO35
+    name: "Batterie"
+    update_interval: 10s
+    filters:
+      - multiply: 5
+
+binary_sensor:
+  - platform: gpio
+    pin: 
+      number: GPIO05
+      inverted: True
+    name: "Top Button"
+  - platform: gpio
+    pin:
+      number: GPIO27
+      inverted: True
+    name: "Power Button"
+  - platform: gpio
+    pin:
+      number: GPIO38
+      inverted: True
+    name: "Press Slide"
+  - platform: gpio
+    pin: 
+      number: GPIO37
+      inverted: True
+    name: "Left Slide"
+  - platform: gpio
+    pin: 
+      number: GPIO39
+      inverted: True
+    name: "Right Slide"
+
+output:
+  - platform: ledc  
+    pin: GPIO02
+    id: rtttl_out
+
+rtttl:
+  output: rtttl_out
+  on_finished_playback:
+    - logger.log: 'Song ended!'
+
+deep_sleep:
+  
+  
